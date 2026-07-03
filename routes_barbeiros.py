@@ -99,3 +99,58 @@ def remover_barbeiro(id):
     conn.close()
 
     return jsonify({"mensagem": "Barbeiro removido com sucesso"}), 200
+
+@barbeiros_bp.route("/barbeiros/<int:id>", methods=["PUT"])
+def atualizar_barbeiro(id):
+  """
+  Atualizar dados de um barbeiro
+  ---
+  tags:
+    - Barbeiros
+  parameters:
+    - name: id
+      in: path
+      type: integer
+      required: true
+      example: 1
+    - name: body
+      in: body
+      required: true
+      schema:
+        type: object
+        properties:
+          nome:
+            type: string
+            example: João Pedro
+          telefone:
+            type: string
+            example: "(21) 99999-9999"
+  responses:
+    200:
+      description: Barbeiro atualizado com sucesso
+    400:
+      description: Campo 'nome' não foi enviado
+    404:
+      description: Barbeiro não encontrado
+  """
+  dados = request.get_json()
+  nome = dados.get("nome")
+  telefone = dados.get("telefone")
+
+  if not nome:
+      return jsonify({"erro": "O campo 'nome' é obrigatório"}), 400
+
+  conn = get_connection()
+  cursor = conn.cursor()
+  cursor.execute("SELECT * FROM barbeiros WHERE id = ?", (id,))
+  barbeiro = cursor.fetchone()
+
+  if not barbeiro:
+      conn.close()
+      return jsonify({"erro": "Barbeiro não encontrado"}), 404
+
+  cursor.execute("UPDATE barbeiros SET nome = ?, telefone = ? WHERE id = ?", (nome, telefone, id))
+  conn.commit()
+  conn.close()
+
+  return jsonify({"id": id, "nome": nome, "telefone": telefone}), 200
